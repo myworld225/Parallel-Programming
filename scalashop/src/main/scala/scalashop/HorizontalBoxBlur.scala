@@ -50,6 +50,7 @@ object HorizontalBoxBlur {
         dst.update(i,j,boxBlurKernel(src,i,j,radius))
         i += 1
       }
+      i = 0
       j += 1
     }
 
@@ -65,7 +66,35 @@ object HorizontalBoxBlur {
   def parBlur(src: Img, dst: Img, numTasks: Int, radius: Int): Unit = {
   // TODO implement using the `task` construct and the `blur` method
 
-  ???
+    /**
+      * Img.width를 numTasks로 나눈 몫으로 구간을 나누고 마지막원소를 구간의 마지막 값 즉 Img.width로 바꿔준다
+      * 그 후 zip 연산으로 튜플 리스트 생성.
+      */
+    val q = src.height / numTasks + 1
+    var slices = ((0 to src.height) by q).toList
+
+    if (slices.last != src.height)
+      slices = slices :+ src.height
+
+    val tuples = slices zip slices.tail
+    val tasks = tuples flatMap( x => List(task(blur(src,dst,x._1,x._2,radius))))
+
+    tasks foreach(x => x.join())
   }
 
+
+  /***
+    * version 2
+    */
+//  def parBlur(src: Img, dst: Img, numTasks: Int, radius: Int): Unit = {
+//    val min = src.height / numTasks + 1
+//    val sliding = min match {
+//      case 1 =>
+//        (0 until src.height).map(x => List(x, x + 1))
+//      case _ =>
+//        (0 to src.height).sliding(min, min - 1).toList
+//    }
+//    val tasks = sliding.map(y => task(blur(src, dst, y.head, y.last, radius)))
+//    tasks.foreach(_.join)
+//  }
 }
